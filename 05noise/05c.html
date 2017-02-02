@@ -1,0 +1,122 @@
+<!DOCTYPE HTML>
+<html>
+
+  <body>
+    <canvas id="myCanvas" width="1400" height="1000"></canvas>
+    <script type="text/javascript" src="../perlin.js"></script>
+    <script type="text/javascript" src="../gg_util_functions.js"></script>
+    <script type="text/javascript" src="../gg_util_vector.js"></script>
+
+    <script>
+
+    var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext('2d');
+    var t = 0;
+
+    var N = 220;
+    var ncenters = 50;
+    var nclasses = 8;
+    var centers = [];
+    //var colors = [];
+
+    var w = canvas.width / N;
+    var h = canvas.height / N;
+    var distances = [];
+
+
+   function distM (v0, v1) {
+	return Math.max(Math.abs(v0.x-v1.x), Math.abs());
+   }
+ 
+   var setup = function() {
+
+/*
+      // initialize colors for all classes
+      for (var i=0; i<nclasses; i++) {
+        colors[i] = new Vector3(Math.round(Math.random()*255),
+                                Math.round(Math.random()*255),
+                                Math.round(Math.random()*255));
+      }
+*/
+      // initialize centers
+      for (var i=0; i<ncenters; i++) {
+
+
+        centers[i] = {
+          cl : Math.floor(Math.random()*nclasses*0.999),
+          pos : new Vector2(Math.random()*canvas.width, Math.random()*canvas.height)
+        }
+      }
+
+      
+      for (var i=0; i<N; i++) {
+        distances[i] = [];
+        for (var j=0; j<N; j++) {
+
+
+          var dMin = 99999999;
+          var x = i*w;
+          var y = j*h;
+
+          // find nearest neighbor
+          for (var c=0; c<ncenters; c++) {
+            //var d = centers[c].pos.dist(new Vector2(x,y));
+            var d = distM (centers[c].pos, new Vector2(x,y));
+            if (d<dMin) {
+              dMin = d;
+              nn = centers[c];
+            }
+          }
+          distances[i][j] = [dMin];
+        }
+      }
+
+      for (var i=0; i<N; i++) {
+        for (var j=0; j<N; j++) {
+
+          var dMin = 99999999;
+          var x = i*w;
+          var y = j*h;
+
+          for (var c=0; c<ncenters; c++) {
+            //var d = centers[c].pos.dist(new Vector2(x,y));
+            var d = distM (centers[c].pos, new Vector2(x,y));
+            if (d<dMin && d>distances[i][j][0]) {
+              dMin = d;
+              nn = centers[c];
+            }
+          }
+          distances[i][j][1] = [dMin];
+        }
+      }
+    }
+
+
+    function draw() {
+      context.fillStyle = "rgba(0,0,0,1)"
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (var i=0; i<N; i++) {
+        for (var j=0; j<N; j++) {
+	  var b = distances[i][j][1];
+          setFillColor (b, b, b);
+          context.fillRect(i*w, j*h, w, h);
+        }
+      }
+    }
+
+    function update () {
+      t = performance.now() / 1000.0;
+
+      draw();
+      requestAnimationFrame(update);
+    };
+
+    setup();
+    update();
+
+    </script>
+
+  </body>
+
+</html>

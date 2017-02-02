@@ -1,0 +1,144 @@
+<!DOCTYPE HTML>
+<html>
+
+
+  <body>
+    <canvas id="myCanvas" width="1200" height="800"></canvas>
+    <script type="text/javascript" src="../perlin.js"></script>
+
+    <script>
+
+		// get the context
+		var canvas = document.getElementById("myCanvas");
+		var context = canvas.getContext('2d');
+
+ 		var frameCount = 0;
+        var N = 4000;
+        
+        var N_ATTRACTORS = 20;
+        var attractors = [];
+        
+        // arrays to store particle data
+        var positions = [];
+        var velocities = [];
+        var infos = [];
+
+
+        var quantize = function (x, n) {
+            if (n==0) return 0;
+            return Math.floor(x*n)/n;
+        }
+    
+    
+        function respawnParticle (index, lifeTime, x0, y0) {
+            // reinit position & velocity
+            /*
+            var x0 = quantize (Math.random(),20)*100+500;
+            var y0 = quantize (Math.random(),20)*100+200;
+            
+            x0 = Math.random()*200+200;
+            y0 = Math.random()*200+200;
+            */
+            positions[index] = {x:x0, y:y0};
+            velocities[index] = {x:0, y:0};
+            infos[index] = {lifeTime:lifeTime};
+        }
+    
+    
+        function init() {
+            
+            for (var i=0; i<N; i++) {
+                respawnParticle(i, i*0.001, -1000, -1000);
+            }
+
+            context.fillStyle   = "rgba(0,0,0,1.0)"
+            context.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    
+        function updateParticles (dt) {
+            
+            for (var i=0; i<N; i++) {
+               
+                var pos = positions[i];
+                var stren = 0.1;
+                var noiseForce = {x: noise.simplex3 (pos.x*0.2, pos.y*0.2, 100+i),
+                                  y: noise.simplex3 (pos.x*0.2, pos.y*0.2, 10+i)};
+                
+
+                velocities[i].x += noiseForce.x*stren;
+                velocities[i].y += noiseForce.y*stren;
+
+                var damping = 0.999;
+                velocities[i].x *= damping;
+                velocities[i].y *= damping;
+
+                
+                // UPDATE POSITIONS: in each timestep add velocity on current position
+                positions[i].x += velocities[i].x;
+                positions[i].y += velocities[i].y;
+
+                
+                infos[i].lifeTime -= dt;
+
+                // kill particle if lifetime expired
+                if (infos[i].lifeTime < 0) {
+                    respawnParticle (i, 4, 
+                        Math.sin(time*0.001)*300+200+Math.random()*20+200,
+                        Math.sin(time*0.002)*100+Math.random()*20+200);
+                }
+                
+            }
+        }
+    
+        function drawParticles()
+        {
+            for (var i=0; i<N; i++) {
+                context.save();
+                context.translate(positions[i].x, positions[i].y);
+                
+                a = infos[i].lifeTime*100;
+                
+                var r = 255;
+                var g = Math.round(a);
+                var b = Math.round(a);
+                context.fillStyle = "rgb("+r+","+g+","+b+")";
+                size = 1; //infos[i].lifeTime / 40;
+                context.fillRect (0, 0, size, size);
+                
+                context.restore();
+            }
+        }
+    
+        var time = performance.now();    
+        var dt = 0;
+
+        var draw = function() {
+
+            var newTime = performance.now();
+            dt = (newTime-time) / 1000;
+            time = newTime;
+
+            context.fillStyle   = "rgba(0,0,0,0.1)"
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            updateParticles(dt);
+            drawParticles();
+            //drawAttractors();
+            
+        	frameCount = frameCount+1;
+        	requestAnimationFrame(draw);
+      	};
+
+
+        // init particles and attractors
+        init();
+        
+        // start loop
+      	draw();
+
+
+    </script>
+
+  </body>
+
+</html>      

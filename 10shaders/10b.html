@@ -1,0 +1,137 @@
+<html>
+
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=UTF8">
+
+<script type="text/javascript" src="shader2.js"></script>
+<script type="text/javascript" src="frameBufferRenderer.js"></script>
+<script type="text/javascript" src="textureRenderer.js"></script>
+<script type="text/javascript" src="texture.js"></script>
+<script type="text/javascript" src="shaders.js"></script>
+<script type="text/javascript" src="../perlin.js"></script>
+
+
+<script type="text/javascript">
+
+var passA;
+var passB;
+
+var textureA;
+var textureB;
+
+var W = 512;
+var H = 512;
+
+var float_textures_ext;
+var color_buffer_float_ext;
+
+    var gl;
+    function initGL(canvas) {
+        try {
+            gl = canvas.getContext("experimental-webgl");
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+        } catch (e) {
+        }
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+    }
+
+
+    function drawScene() {
+
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        passA.update(dt);
+        //passB.update(dt);
+
+        passA.draw ([textureA, textureB], false);
+        //passB.draw ([textureA, textureB], true);
+    }
+
+
+    var time = performance.now();
+    var dt = 0;
+    
+    function tick() {
+        var newTime = performance.now()/1000;
+        dt = newTime - time;
+        time = newTime;
+        requestAnimationFrame(tick);
+        drawScene();
+    }
+
+    var shaderA;
+    //var shaderB;
+    
+    function texZero (buf, N) {
+        for (var i=0; i<N; i++) {
+            var x = Math.floor(i/W);
+            var y = i%W;
+            buf[i*4]   = noise.simplex3(x*0.02, y*0.02, 0)*127+127;
+            buf[i*4+1] = noise.simplex3(x*0.06, y*0.06, 100)*127+127; //Math.floor(Math.random()*255)
+            buf[i*4+2] = noise.simplex3(x*0.12, y*0.12, 400)*127+127;
+            buf[i*4+3] = Math.random()*255;
+        }
+    }
+
+    function texSq (buf, N) {
+        for (var i=0; i<N; i++) {
+            var x = Math.floor(i/W);
+            var y = i%W;
+            var w = 20;
+            buf[i*4]   = (x%w<2 || y%w<2)*255;
+            buf[i*4+1] = (x%w<2 || y%w<2)*255;
+            buf[i*4+2] = (x%w<2 || y%w<2)*255;
+            buf[i*4+3] = Math.random()*255;
+        }
+    }
+
+
+    function webGLStart() {
+        var canvas = document.getElementById("lesson16-canvas");
+        initGL(canvas);
+
+        color_buffer_float_ext = gl.getExtension('WEBGL_color_buffer_float');
+        float_textures_ext = gl.getExtension('OES_texture_float');
+
+
+
+        shaderA = new Shader2 (passA_vertex, passB_fragment);
+        passA = new TextureRenderer (0, 0, W, H, shaderA);
+        passA.shaderProgram.randSeedUniform = gl.getUniformLocation(passA.shaderProgram, "randSeed");
+        passA.shaderProgram.sSizeUniform = gl.getUniformLocation(passA.shaderProgram, "sSize");
+    
+        passA.updateUniforms = function() {
+          gl.uniform1f (this.shaderProgram.timeUniform, this.time)
+          gl.uniform1f (this.shaderProgram.t0Uniform, this.t0);
+          gl.uniform1f (this.shaderProgram.t1Uniform, this.t1);
+          gl.uniform1f (this.shaderProgram.zUniform, this.z);
+          gl.uniform2f (this.shaderProgram.sSizeUniform, W, H);
+          gl.uniform3f (this.shaderProgram.randSeedUniform, Math.random(), Math.random(), Math.random());
+        }
+
+        textureA = createTexture (texZero, W*H, W, H);
+        textureB = createTexture (texSq, W*H, W, H);
+        
+
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+
+        tick();
+    }
+
+</script>
+
+
+</head>
+
+
+<body onload="webGLStart();" style="background-color:#000">
+    <canvas id="lesson16-canvas" style="border: none;" width="1024" height="768"></canvas>
+</body>
+
+</html>

@@ -1,0 +1,216 @@
+<html>
+<head>
+<!--[if IE]>
+<style>
+#frame {
+    zoom: 0.2;
+}
+</style>
+<![endif]-->
+<style>
+
+h1 {
+	color: white;
+	font-weight: normal;
+	font-size: 20px;
+	font-family: "Courier";
+}
+a {
+	z-index: 1;
+}
+
+div {
+	margin: 10px 10px 10px 10px;
+}
+.frame {
+	position: absolute;
+	width:1600px;
+	height: 800px;
+	border: none;
+	z-index: 10;
+
+    -moz-transform: scale(0.3);
+    -moz-transform-origin: 0 0;
+    -o-transform: scale(0.3);
+    -o-transform-origin: 0 0;
+    -webkit-transform: scale(0.3);
+    -webkit-transform-origin: 0 0;
+
+}
+</style>
+</head>
+<body id="body" style="background-color:black; display:block;">
+<h1>
+generative gestaltung 2016 
+</h1>
+
+<table>
+<td>
+<div id="nav" style="color:white">
+	tutorial<br>
+	<a href="gg1617.html?mode=t04">04 blend</a><br>
+	<a href="gg1617.html?mode=t05">05 noise</a><br>
+	<a href="gg1617.html?mode=t07">07 growth</a><br>
+	<a href="gg1617.html?mode=t08">08 particles</a><br>
+	<a href="gg1617.html?mode=t09">09 landscape</a><br>
+	<a href="gg1617.html?mode=t10">10 shaders</a><br>
+	<br>
+	abgaben<br>
+	<a href="gg1617.html?mode=a03">aufg 3</a><br>
+	<a href="gg1617.html?mode=a05">aufg 5</a><br>
+</div>
+</td>
+<td>
+<div id="content"></div>
+</td>
+
+</table>
+</body>
+
+<script type="text/javascript">
+
+	var $_GET = {};
+    	var args = location.search.substr(1).split(/&/);
+	for (var i=0; i<args.length; ++i) {
+    		var tmp = args[i].split(/=/);
+    		if (tmp[0] != "") {
+        		$_GET[decodeURIComponent(tmp[0])] = decodeURIComponent(tmp.slice(1).join("").replace("+", " "));
+    		}	
+	}
+	console.log($_GET);
+
+	function addFrame (url, w, h, ox, oy) {
+		var body = document.getElementById("content");
+		var frame = document.createElement("iframe");
+		frame.style.top = oy;
+		frame.style.left = ox;
+		var div = document.createElement("div");
+		frame.className = "frame";
+		div.style.position="relative";
+		div.style.float="left";
+		div.style.overflow="hidden";
+		div.style.width  = w+"px";
+		div.style.height = h+"px";
+		frame.src = url; 
+		div.appendChild(frame);
+
+		body.appendChild(div);
+	}
+	
+	var URLS_2D = [
+		"http://public.beuth-hochschule.de/~s65591/gg/Uebungsblatt-3.html",
+		"http://codepen.io/alexhans1/full/bBBqLy/",
+		"http://codepen.io/alexhans1/full/MbbpEa/",
+		"http://generative.oliver-david.de/Aufgabe%203/task3_A.html",
+		"http://codepen.io/maryak/pen/BQQKep",
+		"https://codepen.io/rongo89/full/ENgqmZ",
+		"http://public.beuth-hochschule.de/~s65733/GeGe/Aufgabe3.html",
+		"http://g18a.furrymushroom.de/gge/u3.html",
+		"https://codepen.io/Nichtschwert/pen/zorqdY",
+		"http://public.beuth-hochschule.de/~s67422/gg/03a_canvas.html",
+		"http://codepen.io/D-Wulf/full/zoKRwL/",
+		"http://martin-schultz.de/gg/3/",
+		"https://codepen.io/philippfromme/pen/ENyPpL",
+	];
+
+	var URLS_3D = [
+		"http://public.beuth-hochschule.de/~s65591/gg/Uebungsblatt-5.html",
+		"http://michael-tebbe.de/abgabe5/",
+		"http://martin-schultz.de/gg/maryam/5/",
+		"http://public.beuth-hochschule.de/~s65733/GeGe/Aufgabe5_Torus_Variante3.html ",
+		"http://debating.de/BDUDBdev/gg/world.html",
+		"http://g18a.furrymushroom.de/gge/u5.html",
+		"http://public.beuth-hochschule.de/~s67422/gg/Aufgabe%205.html",
+		"http://generative.oliver-david.de/Aufgabe%205/task5.html",
+		"http://codepen.io/Nichtschwert/pen/MbxLGm",
+		"http://martin-schultz.de/gg/5/",
+		"http://manych.de/GenerativeGestaltung/U5/threejs.html",
+		"https://philippfromme.github.io/generative-gestaltung-ws-2016/%C3%BCbungszettel-5/",	
+		"http://77.179.197.4:3000/",
+	];
+
+	var URLS_TUTORIAL = [
+		[],
+		[],
+		[],
+		[],
+		["04blend/04a.html", "04blend/04b.html", "04blend/04c.html", "04blend/04d.html"],
+		["05noise/05a.html", "05noise/05b.html", "05noise/05c.html", "05noise/05d.html"],
+		[],
+		["07growth/07a.html", "07growth/07b.html", "07growth/07c.html", "07growth/07c.html"],
+		["08particles/08a.html","08particles/08b.html","08particles/08c.html","08particles/08d.html"],
+		["09landscape/09a.html", "09landscape/09b.html", "09landscape/09c.html", "09landscape/09d.html"],
+		["10shaders/10a.html","10shaders/10b.html","10shaders/10c.html","10shaders/10b.html"]
+	];
+
+
+	var OFFSETS = [
+		[0,-50],
+		[-50,-50],
+		[-50,-50],
+		[-100,0],
+		[-30,-20],
+		[0,-50],
+		[-50,-50],
+		[0,0],
+		[0,-50],
+		[0,-50],
+		[-100,-20],
+		[-100,-20],
+		[0,-50],
+	];
+
+	var URLS = URLS_TUTORIAL[4];
+	if ($_GET.mode) {
+		if ($_GET.mode=="t04") {
+			URLS = URLS_TUTORIAL[4];
+		}
+		if ($_GET.mode=="t05") {
+			URLS = URLS_TUTORIAL[5];
+		}
+		if ($_GET.mode=="t07") {
+			URLS = URLS_TUTORIAL[7];
+		}
+		if ($_GET.mode=="t08") {
+			URLS = URLS_TUTORIAL[8];
+		}
+		if ($_GET.mode=="t09") {
+			URLS = URLS_TUTORIAL[9];
+		}
+		if ($_GET.mode=="t10") {
+			URLS = URLS_TUTORIAL[10];
+		}
+		if ($_GET.mode=="a03") {
+			URLS = URLS_2D;
+		}
+		if ($_GET.mode=="a05") {
+			URLS = URLS_3D;
+		}
+	}
+
+	var W = 250;
+	var H = 200;
+
+/*
+	function shuffle(a) {
+    		for (let i = a.length; i; i--) {
+        		let j = Math.floor(Math.random() * i);
+        		[a[i - 1], a[j]] = [a[j], a[i - 1]];
+    		}
+	}
+	var ind = [];
+	for (var i=0; i<13; i++)
+		ind[i] = i;
+	//shuffle(ind);
+*/
+	for (var i=0; i<URLS.length; i++) {
+		addFrame(URLS[i], W, H, 0, 0 ); //OFFSETS[i][0], OFFSETS[i][1]);
+	}
+
+
+
+
+
+</script>
+
+</html>

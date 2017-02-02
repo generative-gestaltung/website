@@ -1,0 +1,132 @@
+<!DOCTYPE HTML>
+<html>
+
+  <head>
+    <script>
+
+    var data = [];
+    var data1 = [];
+    var colors = [];
+    var colors1 = [];
+    var N = 60;
+    var M = 50;
+    
+    var quantize = function (val, steps) {
+      return Math.round(val*steps) / steps;
+    }
+
+    var initData = function() {
+      for (i=0; i<N; i++) {
+        data[i] = [];
+        colors[i] = [];
+        colors1[i] = [];
+        for (j=0; j<N; j++) {
+          data[i][j] = Math.random();
+          colors[i][j] = [Math.floor(Math.sin(i*0.2)*125+125), Math.floor(Math.random()*255), Math.floor(Math.random()*100+100)]; 
+          colors1[i][j] = [255-i*7,0, i*7]; 
+        }
+      }
+    }
+
+    var blend = function (v0, v1, t) {
+      return v0*(1-t) + v1*t;
+    }
+
+    var init = function() {
+      canvas = document.getElementById("myCanvas");
+      context = canvas.getContext('2d');
+      frameCount = 0;
+
+      initData();
+    }
+
+
+    var center = {};
+    center.x = 200;
+    center.y = 200;
+    
+    var fillBrightness = function (b) {
+      b = Math.round(b*255);
+      context.fillStyle = "rgba("+b+","+b+","+b+",1.0)";
+    }
+
+    
+    var draw = function() {
+
+      var time = performance.now();
+      context.fillStyle = "#fff";
+      context.fillRect (0, 0, canvas.width, canvas.height);    
+      s = 16;
+
+      context.lineWidth = 3;
+      for (i=0; i<N; i++) {
+        for (j=0; j<M; j++) {
+
+          context.beginPath();
+
+	  t = Math.sin(time*0.0004+i*0.02)+0.5;
+          //t = Math.sin(frameCount*0.03-i*0.1)*0.5+0.5;
+
+	  if (t<0) t=0;
+          if (t>1) t=1;
+
+          var r = Math.round (blend (colors1[i][j][0], colors[i][j][0], t));
+          var g = Math.round (blend (colors1[i][j][1], colors[i][j][1], t));
+          var b = Math.round (blend (colors1[i][j][2], colors[i][j][2], t));
+          context.strokeStyle = "rgb("+r+","+g+","+b+")";
+          context.save();
+          context.translate(i*s+s/2, j*s+s/2);
+
+
+          len0 = 20;
+          len1 = data[i][j]*30;
+
+          angle2 = Math.sin(frameCount*0.01)*Math.PI + Math.PI;
+          
+
+          angle3 = Math.sin(i*0.1);
+          angle = blend (angle2, data[i][j]*Math.PI*2, t);
+
+          t2 = Math.sin(time*0.0002)+0.5;
+          if (t2<0) t2 = 0;
+          if (t2>1) t2 = 1;
+
+	  var t3 = Math.sin(time*0.001);
+	  if (t3<0) t3=0;
+	  if (t3>1) t3=1;
+          angle = blend (angle, angle3, t3);
+          
+	  len = blend (len0, len1, t2);
+
+          context.rotate(angle);
+          context.translate(-s/2,0);
+          context.moveTo(0,0);
+          context.lineTo(len,0);
+          context.restore();
+       
+          context.stroke();
+         }
+      }
+      
+      //context.closePath();
+      //initData();
+      frameCount = frameCount+1;
+      requestAnimationFrame(draw);
+    };
+
+    </script>
+  </head>
+
+  <body>
+
+
+    <canvas id="myCanvas" width="1200" height="800"></canvas>
+
+    <script>
+      init();
+      draw();		
+    </script>
+
+  </body>
+
+</html>      

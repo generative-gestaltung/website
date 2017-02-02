@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html>
+
+
+  <body>
+    <canvas id="myCanvas" width="1200" height="800"></canvas>
+    <script type="text/javascript" src="../perlin.js"></script>
+
+    <script>
+
+		// get the context
+		var canvas = document.getElementById("myCanvas");
+		var context = canvas.getContext('2d');
+
+
+ 		var frameCount = 0;
+        var N = 10000;
+        
+        var N_ATTRACTORS = 20;
+        var attractors = [];
+
+        
+        
+        // arrays to store particle data
+        var positions = [];
+        var velocities = [];
+        var infos = [];
+
+
+        var quantize = function (x, n) {
+            if (n==0) return 0;
+            return Math.floor(x*n)/n;
+        }
+    
+    
+        function respawnParticle (index) {
+            // reinit position & velocity
+            var x0 = quantize (Math.random(),20)*50+500;
+            var y0 = quantize (Math.random(),20)*50+200;
+            positions[index] = {x:x0, y:y0};
+            velocities[index] = {x:0, y:0};
+            infos[index] = {lifeTime:Math.random()*100+100};
+        }
+    
+    
+        function init() {
+            
+            for (var i=0; i<N; i++) {
+                respawnParticle(i);
+            }
+
+            context.fillStyle   = "rgba(0,0,0,1.0)"
+            context.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    
+        function updateParticles() {
+            
+            for (var i=0; i<N; i++) {
+               
+                var pos = positions[i];
+                var stren = 0.1;
+                var noiseForce = {x: noise.simplex3 (frameCount*0.0001, frameCount*0.007,frameCount*0.0),
+                                  y: noise.simplex3 (pos.x*0.002, pos.y*0.007, 10)};
+                
+
+                velocities[i].x += noiseForce.x*stren;
+                velocities[i].y += noiseForce.y*stren;
+
+                var damping = 0.99;
+                velocities[i].x *= damping;
+                velocities[i].y *= damping;
+
+                
+                // UPDATE POSITIONS: in each timestep add velocity on current position
+                positions[i].x += velocities[i].x;
+                positions[i].y += velocities[i].y;
+
+                if (positions[i].x<0 || positions[i].x>canvas.width || positions[i].y<0 || positions[i].y>canvas.height)
+                    respawnParticle(i);
+                infos[i].lifeTime--;
+
+                // kill particle if lifetime expired
+                if (infos[i].lifeTime < 0)
+                    respawnParticle(i);
+                
+            }
+        }
+    
+        function drawParticles()
+        {
+            for (var i=0; i<N; i++) {
+                context.save();
+                context.translate(positions[i].x, positions[i].y);
+                
+                a = infos[i].lifeTime/150;
+                b = 255; //Math.round(infos[i].lifeTime/100*255);
+
+                var r = 255;
+                var g = 255;
+                var b = 100;
+                context.fillStyle = "rgb("+r+","+g+","+b+")";
+                size = 1; //infos[i].lifeTime / 40;
+                context.fillRect (0, 0, size, size);
+                
+                context.restore();
+            }
+        }
+    
+    
+		var draw = function() {
+
+
+            context.fillStyle   = "rgba(0,0,0,0.018)"
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            updateParticles();
+            drawParticles();
+            //drawAttractors();
+            
+        	frameCount = frameCount+1;
+        	requestAnimationFrame(draw);
+      	};
+
+
+        // init particles and attractors
+        init();
+        
+        // start loop
+      	draw();
+
+
+    </script>
+
+  </body>
+
+</html>      

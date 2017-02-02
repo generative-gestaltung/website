@@ -1,0 +1,164 @@
+<html>
+  <body>
+
+    <script src="../three.min.js"></script>
+    <script type="text/javascript" src="../perlin.js"></script>
+    <script type="text/javascript" src="../gg_util_functions.js"></script>
+        
+    <script>
+      
+      var scene;
+      var camera;
+      var renderer;
+      var N = 400;
+      var objects = [];
+      var treePos = [];
+
+
+
+      function getHeight(x,y) {
+        return noise.simplex2(x*0.005, y*0.005)*25 + noise.simplex2(x*0.03, y*0.03)*3 + noise.simplex2(x*0.1, y*0.1)*0.4;
+      }
+
+      function init() {
+
+        // create scene
+        scene = new THREE.Scene();
+
+        // create camera with fov, aspect ratio, near and far plane
+        camera = new THREE.PerspectiveCamera (70, window.innerWidth/window.innerHeight, 0.1, 50000);
+
+        // default params
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize (window.innerWidth, window.innerHeight);
+        document.body.appendChild (renderer.domElement);
+      
+        // create NxN box-meshes and add them to scene
+        var size = 38;
+        var space = 40;
+
+
+        geometry = new THREE.Geometry();
+
+        for (var i=0; i<N*N; i++) {
+
+          var x0 = (i%N);
+          var z0 = Math.floor(i/N);
+
+          geometry.vertices.push(
+            new THREE.Vector3(x0, getHeight(x0, z0), z0),
+            new THREE.Vector3(x0, getHeight(x0, z0+1), z0+1),
+            new THREE.Vector3(x0+1, getHeight(x0+1, z0), z0),
+            new THREE.Vector3(x0+1, getHeight(x0+1, z0+1), z0+1)
+          );
+
+          geometry.faces.push(
+            new THREE.Face3(i*4, i*4+1, i*4+2),
+            new THREE.Face3(i*4+2,i*4+1,i*4+3)
+          );
+          
+        }
+        //material = new THREE.MeshBasicMaterial( { color: 0xffffff} );
+        material = new THREE.MeshPhongMaterial({color: 0x99ff99, specular: 0xff0000, shininess: 30, shading: THREE.FlatShading});
+        
+        
+        mesh = new THREE.Mesh(geometry, material);
+        
+        scale = 1;
+        mesh.position.x = -N/2*scale;
+        mesh.position.z = -N/2*scale;
+
+        mesh.scale.x = scale;
+        mesh.scale.y = scale;
+        mesh.scale.z = scale;
+
+        scene.add(mesh);
+
+
+        for (var i=0; i<N*N; i++) {
+          
+          var x = (i%N);
+          var z = Math.floor(i/N);
+
+
+          if (Math.random()>noise.simplex2(x*0.01, z*0.01)*0.1) continue;
+          var geometry = new THREE.Geometry();
+
+          geometry.vertices.push(
+            new THREE.Vector3(0,0,0),
+            new THREE.Vector3(1,0,0),
+            new THREE.Vector3(0,0,1),
+            new THREE.Vector3(1,0,1),
+            new THREE.Vector3(0.5,1,0.5)
+          );
+
+          geometry.faces.push(
+            new THREE.Face3(1,0,4),
+            new THREE.Face3(0,2,4),
+            new THREE.Face3(2,3,4),
+            new THREE.Face3(3,1,4)
+          );
+
+          var mat = new THREE.MeshPhongMaterial({color: 0xffffff*Math.random(), specular: 0x008800, shininess: 30, shading: THREE.FlatShading});
+          var object = new THREE.Mesh(geometry, mat);
+          object.position.x = x;
+          object.position.z = z;
+          object.position.y = getHeight(object.position.x, object.position.z);
+          object.position.x -= N/2;
+          object.position.z -= N/2;
+
+          object.rotation.y = Math.random()*Math.PI*2;
+          object.scale.x = 2;
+          object.scale.y = Math.random()*3+3;
+          object.scale.z = 2;
+
+          objects.push(object);
+          treePos.push([new THREE.Vector3(object.position.x, object.position.y, object.position.z), 
+                       new THREE.Vector3(0,30,0)]);
+          scene.add(object);
+        }
+
+        var directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.x = 0.8;
+        directionalLight.position.y = 0.3;
+        directionalLight.position.z = 1.0;
+        directionalLight.position.normalize();
+        scene.add(directionalLight);
+
+      }
+
+      // basic render loop
+      var render = function () {
+        var time = performance.now();
+
+        for (var i=0; i<objects.length; i++) {
+
+          t = Math.sin(time*0.001+i*0.001);
+          t = constrain(t, 0, 1);
+          t = 0;
+          objects[i].position.x = blend(treePos[i][0].x, treePos[i][1].x, t);
+          objects[i].position.y = blend(treePos[i][0].y, treePos[i][1].y, t);
+          objects[i].position.z = blend(treePos[i][0].z, treePos[i][1].z, t);
+        }
+
+        var R = 100; //*Math.sin(time*0.001);
+        phase = time*0.0004;
+
+        // move camera
+        camera.position.x = Math.sin(phase)*R;
+        camera.position.z = Math.cos(phase)*R;
+        camera.position.y = 50; //getHeight(camera.position.x, camera.position.z);
+        camera.lookAt (new THREE.Vector3 (0,0,0));
+        
+        requestAnimationFrame (render);
+        renderer.render (scene, camera);
+      };
+
+      init();
+      render();
+      
+      
+      
+    </script>
+  </body>
+</html>
