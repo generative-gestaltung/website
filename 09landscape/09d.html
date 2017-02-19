@@ -4,21 +4,143 @@
     <script src="../three.min.js"></script>
     <script type="text/javascript" src="../perlin.js"></script>
     <script type="text/javascript" src="../gg_util_functions.js"></script>
-        
+
+
+    <script id="vertexShader" type="x-shader/x-vertex">
+        // comes with framework
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        attribute vec3 position;
+        attribute vec4 color;
+        attribute vec3 normal;
+        // data to be passed to fragment shader
+        varying vec3 v_position;
+        varying vec4 v_color;
+
+        void main() {
+
+          // calcuate pixel position on screen and pass to fragment shader
+          gl_Position = projectionMatrix * modelViewMatrix * vec4 (position, 1.0);
+
+          // pass world coords position to fragment shader
+          v_position = position.xyz; //positionNew.xyz;
+
+          // pass color to fragment shader
+          v_color = color * vec4 (position.xy , 1.0, 1.0);
+        }
+      </script>
+
+
+      <script id="fragmentShader" type="x-shader/x-fragment">
+
+        precision mediump float;
+        precision mediump int;
+
+        varying vec3 v_position;
+        varying vec4 v_color;
+
+        uniform float time;
+
+        float rand(vec2 co){
+          return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+      	}
+
+        void main() {
+
+          float d[9];
+    		  float min0 = 99999.0;
+    		  float min1 = 99999.0;
+
+      		for (int i=0; i<3; i++) {
+            for (int j=0; j<3; j++) {
+              //vec2 dp = floor(v_position.xy*1.0);
+              vec2 center = floor(v_position.xy*2.0)*0.5+vec2(0.0);
+        			//vec2 pos = center+vec2(float(i)-1.0, float(j)-1.0)*0.25;
+              vec2 pos = center;
+              pos.x += (1.0-float(i))*0.5;
+              pos.y += (1.0-float(j))*0.5;
+              pos += vec2(rand(pos)*0.5, rand(pos+vec2(2.0))*0.5);
+              pos.x += sin(time*0.0003+v_position.y*2.0)*0.1;
+              pos.y += cos(time*0.0003+v_position.x*3.0)*0.1;
+        			//vec2 pos = vec2 (rand(p), rand(p+vec2(0,1.0)));
+              //pos += dp;
+              //vec2 pos = vec2 (float(i/5), mod(float(i), 5.0))/5.0;
+              //pos += dp;
+              d[j*3+i] = distance (pos, v_position.xy) / 1.0;
+        			if (d[j*3+i]<min0)
+        				min0 = d[j*3+i];
+            }
+      		}
+
+          for (int i=0; i<3; i++) {
+            for (int j=0; j<3; j++) {
+      			  if (d[j*3+i]<min1 && d[j*3+i]>min0)
+      				  min1 = d[j*3+i];
+            }
+      		}
+
+          float cc = rand(v_position.yx)*0.5;
+          float cc1 = rand(v_position.xy)*0.5;
+          float br = (min1 - min0)*4.0;
+
+          //if (br<0.02) br = 0.0;
+          //else br = 1.0;
+          gl_FragColor = vec4 (br, br, br, 1.0);
+        }
+
+      </script>
+
+
+
     <script>
-      
+
       var scene;
       var camera;
       var renderer;
-      var N = 400;
       var objects = [];
-      var treePos = [];
 
-
-
-      function getHeight(x,y) {
-        return noise.simplex2(x*0.005, y*0.005)*25 + noise.simplex2(x*0.03, y*0.03)*3 + noise.simplex2(x*0.1, y*0.1)*0.4;
+      function getHeight(x,z) {
+        return Math.random()*10;
       }
+
+      var mat0;
+      function addShape() {
+        var heartShape = new THREE.Shape();
+        heartShape.moveTo (0,0);
+        var R = 8;
+        /*
+        for (var i=0; i<41; i++) {
+          heartShape.lineTo (Math.sin(i*Math.PI/20), Math.cos(i*Math.PI/20));
+        }
+        */
+        heartShape.lineTo (R,0);
+        heartShape.lineTo (R,R);
+        heartShape.lineTo (0,R);
+        heartShape.lineTo (0,0);
+
+
+        mat0 = new THREE.RawShaderMaterial ({
+          uniforms: {
+            time: { type: "f", value: 1.0 }
+          },
+          vertexShader: document.getElementById ('vertexShader').textContent,
+          fragmentShader: document.getElementById ('fragmentShader').textContent,
+          side: THREE.DoubleSide,
+          transparent: true
+        });
+        //heartShape.bezierCurveTo (2, 2, 2, 0, 0, 0 );
+        var extrudeSettings = {amount: 8, bevelEnabled: true, bevelSegments: 2, steps: 2, bevelSize: 1, bevelThickness: 1};
+        //var geometry = new THREE.ExtrudeGeometry( heartShape, extrudeSettings );
+        var geometry = new THREE.ShapeGeometry (heartShape);
+        var mesh = new THREE.Mesh (geometry, mat0);
+        mesh.scale.x = 10;
+        mesh.scale.y = 10;
+        mesh.position.x = -40;
+        mesh.position.z = 45;
+        mesh.position.y = -30;
+        scene.add(mesh);
+      }
+
 
       function init() {
 
@@ -32,38 +154,36 @@
         renderer = new THREE.WebGLRenderer();
         renderer.setSize (window.innerWidth, window.innerHeight);
         document.body.appendChild (renderer.domElement);
-      
-        // create NxN box-meshes and add them to scene
-        var size = 38;
-        var space = 40;
 
 
         geometry = new THREE.Geometry();
 
+        var N = 10;
+        var sz = 10;
         for (var i=0; i<N*N; i++) {
 
-          var x0 = (i%N);
-          var z0 = Math.floor(i/N);
+          var x0 = (i%N - N/2);
+          var z0 = Math.floor(i/N - N/2);
 
           geometry.vertices.push(
-            new THREE.Vector3(x0, getHeight(x0, z0), z0),
-            new THREE.Vector3(x0, getHeight(x0, z0+1), z0+1),
-            new THREE.Vector3(x0+1, getHeight(x0+1, z0), z0),
-            new THREE.Vector3(x0+1, getHeight(x0+1, z0+1), z0+1)
+            new THREE.Vector3 (x0*sz, getHeight(x0, z0), z0*sz),
+            new THREE.Vector3 (x0*sz, getHeight(x0, z0+1), (z0+1)*sz),
+            new THREE.Vector3 ((x0+1)*sz, getHeight(x0+1, z0), z0*sz),
+            new THREE.Vector3 ((x0+1)*sz, getHeight(x0+1, z0+1), (z0+1)*sz)
           );
 
           geometry.faces.push(
             new THREE.Face3(i*4, i*4+1, i*4+2),
             new THREE.Face3(i*4+2,i*4+1,i*4+3)
           );
-          
+
         }
-        //material = new THREE.MeshBasicMaterial( { color: 0xffffff} );
-        material = new THREE.MeshPhongMaterial({color: 0x99ff99, specular: 0xff0000, shininess: 30, shading: THREE.FlatShading});
-        
-        
+        material = new THREE.MeshBasicMaterial( { color: 0x8f003f} );
+        //material = new THREE.MeshPhongMaterial({color: 0x99ff99, specular: 0xff0000, shininess: 30, shading: THREE.FlatShading});
+
+
         mesh = new THREE.Mesh(geometry, material);
-        
+
         scale = 1;
         mesh.position.x = -N/2*scale;
         mesh.position.z = -N/2*scale;
@@ -74,9 +194,11 @@
 
         scene.add(mesh);
 
+        addShape();
+
 
         for (var i=0; i<N*N; i++) {
-          
+
           var x = (i%N);
           var z = Math.floor(i/N);
 
@@ -113,24 +235,17 @@
           object.scale.z = 2;
 
           objects.push(object);
-          treePos.push([new THREE.Vector3(object.position.x, object.position.y, object.position.z), 
+          treePos.push([new THREE.Vector3(object.position.x, object.position.y, object.position.z),
                        new THREE.Vector3(0,30,0)]);
           scene.add(object);
         }
-
-        var directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        directionalLight.position.x = 0.8;
-        directionalLight.position.y = 0.3;
-        directionalLight.position.z = 1.0;
-        directionalLight.position.normalize();
-        scene.add(directionalLight);
-
       }
 
       // basic render loop
       var render = function () {
         var time = performance.now();
 
+/*
         for (var i=0; i<objects.length; i++) {
 
           t = Math.sin(time*0.001+i*0.001);
@@ -140,25 +255,28 @@
           objects[i].position.y = blend(treePos[i][0].y, treePos[i][1].y, t);
           objects[i].position.z = blend(treePos[i][0].z, treePos[i][1].z, t);
         }
+*/
+
+        mat0.uniforms.time.value = time;
 
         var R = 100; //*Math.sin(time*0.001);
-        phase = time*0.0004;
-
+        //phase = time*0.0004;
+        phase = 0;
         // move camera
         camera.position.x = Math.sin(phase)*R;
         camera.position.z = Math.cos(phase)*R;
         camera.position.y = 50; //getHeight(camera.position.x, camera.position.z);
         camera.lookAt (new THREE.Vector3 (0,0,0));
-        
+
         requestAnimationFrame (render);
         renderer.render (scene, camera);
       };
 
       init();
       render();
-      
-      
-      
+
+
+
     </script>
   </body>
 </html>

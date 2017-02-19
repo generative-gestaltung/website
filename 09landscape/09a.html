@@ -4,16 +4,20 @@
     <script src="../three.min.js"></script>
     <script type="text/javascript" src="../perlin.js"></script>
     <script type="text/javascript" src="../gg_util_functions.js"></script>
-        
+
+
+
+
+
+
     <script>
-      
+
       var scene;
       var camera;
       var renderer;
       var N = 400;
       var objects = [];
       var treePos = [];
-
 
 
       function getHeight(x,y) {
@@ -32,7 +36,7 @@
         renderer = new THREE.WebGLRenderer();
         renderer.setSize (window.innerWidth, window.innerHeight);
         document.body.appendChild (renderer.domElement);
-      
+
         // create NxN box-meshes and add them to scene
         var size = 38;
         var space = 40;
@@ -56,14 +60,14 @@
             new THREE.Face3(i*4, i*4+1, i*4+2),
             new THREE.Face3(i*4+2,i*4+1,i*4+3)
           );
-          
+
         }
         //material = new THREE.MeshBasicMaterial( { color: 0xffffff} );
         material = new THREE.MeshPhongMaterial({color: 0x99ff99, specular: 0xff0000, shininess: 30, shading: THREE.FlatShading});
-        
-        
+
+
         mesh = new THREE.Mesh(geometry, material);
-        
+
         scale = 1;
         mesh.position.x = -N/2*scale;
         mesh.position.z = -N/2*scale;
@@ -76,7 +80,7 @@
 
 
         for (var i=0; i<N*N; i++) {
-          
+
           var x = (i%N);
           var z = Math.floor(i/N);
 
@@ -113,7 +117,7 @@
           object.scale.z = 2;
 
           objects.push(object);
-          treePos.push([new THREE.Vector3(object.position.x, object.position.y, object.position.z), 
+          treePos.push([new THREE.Vector3(object.position.x, object.position.y, object.position.z),
                        new THREE.Vector3(0,30,0)]);
           scene.add(object);
         }
@@ -149,16 +153,16 @@
         camera.position.z = Math.cos(phase)*R;
         camera.position.y = 50; //getHeight(camera.position.x, camera.position.z);
         camera.lookAt (new THREE.Vector3 (0,0,0));
-        
+
         requestAnimationFrame (render);
         renderer.render (scene, camera);
       };
 
       init();
       render();
-      
-      
-      
+
+
+
     </script>
   </body>
 </html>
