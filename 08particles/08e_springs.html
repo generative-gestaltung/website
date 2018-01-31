@@ -1,0 +1,181 @@
+<!DOCTYPE HTML>
+<html>
+
+
+  <body>
+    <canvas id="myCanvas" width="1200" height="800"></canvas>
+    <script type="text/javascript" src="../perlin.js"></script>
+
+    <script>
+
+    function max (a, b) {
+      if (a>b) return a;
+      return b;
+    }
+
+    var SpringPoint = function (x, y, cnst) {
+      this.x = x;
+      this.y = y;
+      this.vel = {
+        x:0,
+        y:0
+      }
+      this.cnst = cnst;
+    }
+
+    SpringPoint.prototype.update = function() {
+
+      this.vel.x *= 0.995;
+      this.vel.y *= 0.995;
+
+      this.x += this.vel.x;
+      this.y += this.vel.y;
+    }
+
+    var SpringCon = function (p0, p1, str) {
+      this.p0 = p0;
+      this.p1 = p1;
+      this.str = str;
+
+    }
+
+    SpringCon.prototype.update = function (dt) {
+
+      let velx = (this.p1.x - this.p0.x) * this.str;
+      let vely = (this.p1.y - this.p0.y) * this.str;
+
+      if (velx > 0.1) velx = 0.1;
+      if (vely > 0.1) vely = 0.1;
+
+      if (!this.p0.cnst) {
+        this.p0.vel.x += velx;
+        this.p0.vel.y += vely;
+      }
+      if (!this.p1.cnst) {
+        this.p1.vel.x -= velx;
+        this.p1.vel.y -= vely;
+      }
+    }
+
+
+    var Springs = function () {
+      this.points = [];
+      this.con = [];
+    }
+
+    Springs.prototype.addPoint = function (x, y, cnst) {
+      this.points.push (new SpringPoint(x,y,cnst));
+    }
+
+    Springs.prototype.addCon = function (ind0, ind1, str) {
+      if (max(ind0, ind1)>=this.points.length) return;
+      this.con.push (new SpringCon (this.points[ind0], this.points[ind1], 0.01));
+    }
+
+
+    Springs.prototype.update = function(dt) {
+      for (let con of this.con) {
+        con.update(dt);
+      }
+      for (let con of this.con) {
+        con.update(dt);
+      }
+      for (let p of this.points) {
+        p.update(dt);
+      }
+    }
+
+    Springs.prototype.draw = function(c) {
+
+      c.strokeStyle = '#f82';
+
+      c.beginPath();
+      for (let con of this.con) {
+        c.moveTo(con.p0.x, con.p0.y);
+        c.lineTo(con.p1.x, con.p1.y);
+      }
+      c.stroke();
+
+      for (let p of this.points) {
+        c.fillStyle = '#08f';
+        if (p.cnst)
+          c.fillStyle = '#0a0';
+
+        c.fillRect(p.x-2, p.y-2, 4, 4);
+      }
+    }
+
+
+
+		// get the context
+		var canvas = document.getElementById("myCanvas");
+		var context = canvas.getContext('2d');
+    var N = 50;
+
+    var springs = new Springs();
+    for (let x=0; x<N; x++) {
+      for (let y=0; y<N; y++) {
+        let cnst = (x==0 || x==N-1 || y==0 || y==N-1);
+        let xo = 0;
+        let yo = 0;
+        if (!cnst && x==N/2) {
+          xo = Math.sin(x*0.01+y*0.1)*120; //Math.random()*50-25;
+          yo = 0;//Math.random()*50-25;
+        }
+        springs.addPoint(x*14+20+xo, y*14+20+yo, cnst);
+      }
+    }
+
+    for (let i=0; i<N-1; i++) {
+      for (let j=0; j<N; j++) {
+        springs.addCon(i+j*N, j*N+i+1, 1);
+        springs.addCon(i*N+j, i*N+j+N, 1);
+      }
+    }
+ 		var frameCount = 0;
+
+
+
+        function init() {
+
+          context.fillStyle   = "rgba(0,0,0,1.0)"
+          context.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+
+        var time = performance.now();
+        var dt = 0;
+
+        var draw = function() {
+
+            var newTime = performance.now();
+            dt = (newTime-time) / 1000;
+            time = newTime;
+
+            context.fillStyle   = "rgba(0,0,0,0.1)"
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i=0; i<N; i++) {
+              //springs.points[i].y  = (i-(N/2))*(30+20*Math.sin(time*0.003))+300;
+              //springs.points[i+(N*(N-1))].y = (i-5)*(30+20*Math.sin(time*0.003))+300;
+            }
+            springs.update(dt);
+            springs.draw(context);
+
+        	frameCount = frameCount+1;
+        	requestAnimationFrame(draw);
+      	};
+
+
+        // init particles and attractors
+        init();
+
+        // start loop
+      	draw();
+
+
+    </script>
+
+  </body>
+
+</html>
