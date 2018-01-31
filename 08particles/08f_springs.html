@@ -25,15 +25,9 @@
 
     SpringPoint.prototype.update = function() {
 
-      let fx = (-this.x + 500)*0.000003;
-      //if (fx>0.1) fx = 0.1;
-      this.vel.x = (this.vel.x+fx) * 0.99;
-      this.vel.y = (this.vel.y+0.02) * 0.99;
+      this.vel.x *= 0.995;
+      this.vel.y *= 0.995;
 
-      let nextX = this.x + this.vel.x;
-      let nextY = this.y + this.vel.y;
-
-      if (nextY > 400) this.vel.y *= -1;
       this.x += this.vel.x;
       this.y += this.vel.y;
     }
@@ -50,12 +44,8 @@
       let velx = (this.p1.x - this.p0.x) * this.str;
       let vely = (this.p1.y - this.p0.y) * this.str;
 
-      let vmax = 1;
-      if (velx > vmax) velx = vmax;
-      if (vely > vmax) vely = vmax;
-
-      if (velx < -vmax) velx = -vmax;
-      if (vely < -vmax) vely = -vmax;
+      if (velx > 0.1) velx = 0.1;
+      if (vely > 0.1) vely = 0.1;
 
       if (!this.p0.cnst) {
         this.p0.vel.x += velx;
@@ -84,14 +74,14 @@
 
 
     Springs.prototype.update = function(dt) {
-      for (let i=0; i<3; i++) {
-        for (let con of this.con) {
-          con.update(dt);
-        }
-        for (let p of this.points) {
-          if (p.cnst) continue;
-          p.update(dt);
-        }
+      for (let con of this.con) {
+        con.update(dt);
+      }
+      for (let con of this.con) {
+        con.update(dt);
+      }
+      for (let p of this.points) {
+        p.update(dt);
       }
     }
 
@@ -111,7 +101,7 @@
         if (p.cnst)
           c.fillStyle = '#0a0';
 
-        //c.fillRect(p.x-2, p.y-2, 4, 4);
+        c.fillRect(p.x-2, p.y-2, 4, 4);
       }
     }
 
@@ -120,16 +110,27 @@
 		// get the context
 		var canvas = document.getElementById("myCanvas");
 		var context = canvas.getContext('2d');
-    var N = 200;
+    var N = 50;
 
     var springs = new Springs();
     for (let x=0; x<N; x++) {
-      let cnst = (x==0 || x==N-1);
-      springs.addPoint(x*5+10, 400, cnst);
+      for (let y=0; y<N; y++) {
+        let cnst = (x==0 || x==N-1 || y==0 || y==N-1);
+        let xo = 0;
+        let yo = 0;
+        if (!cnst && x==N/2) {
+          xo = Math.sin(x*0.01+y*0.1)*120; //Math.random()*50-25;
+          yo = 0;//Math.random()*50-25;
+        }
+        springs.addPoint(x*14+20+xo, y*14+20+yo, cnst);
+      }
     }
 
     for (let i=0; i<N-1; i++) {
-      springs.addCon(i, i+1, 1);
+      for (let j=0; j<N; j++) {
+        springs.addCon(i+j*N, j*N+i+1, 1);
+        springs.addCon(i*N+j, i*N+j+N, 1);
+      }
     }
  		var frameCount = 0;
 
@@ -137,7 +138,7 @@
 
         function init() {
 
-          context.fillStyle = "rgba(0,0,0,1.0)"
+          context.fillStyle   = "rgba(0,0,0,1.0)"
           context.fillRect(0, 0, canvas.width, canvas.height);
         }
 
@@ -154,23 +155,10 @@
             context.fillStyle   = "rgba(0,0,0,0.1)"
             context.fillRect(0, 0, canvas.width, canvas.height);
 
-
-            for (let i=0; i<10; i++) {
-              springs.points[140+i].x = Math.cos(time*0.001)*40+700+i*2;
-              springs.points[140+i].y = Math.sin(time*0.001)*40+200;
-              springs.points[140+i].cnst = true;
+            for (let i=0; i<N; i++) {
+              //springs.points[i].x = Math.sin(i*0.2+time*0.001)*20+20;
+              //springs.points[i+(N*(N-1))].y = (i-5)*(30+20*Math.sin(time*0.003))+300;
             }
-
-            for (let i=0; i<10; i++) {
-              springs.points[110+i].y = 50;
-              springs.points[110+i].cnst = true;
-            }
-
-            for (let i=0; i<10; i++) {
-              springs.points[80+i].y = Math.sin(time*0.001+1)*100+200;
-              springs.points[80+i].cnst = true;
-            }
-
             springs.update(dt);
             springs.draw(context);
 
